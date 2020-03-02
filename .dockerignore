@@ -1,0 +1,6 @@
+target/
+.env
+.editorconfig
+.gitignore
+*.[mMdD]
+.vscode/
