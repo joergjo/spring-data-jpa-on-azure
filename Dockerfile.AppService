@@ -1,0 +1,29 @@
+FROM mcr.microsoft.com/java/jdk:11-zulu-alpine AS base
+VOLUME /tmp
+EXPOSE 8080 2222
+
+FROM mcr.microsoft.com/java/jdk:11-zulu-alpine AS build
+WORKDIR /workspace/app
+
+COPY mvnw .
+COPY .mvn .mvn
+COPY pom.xml .
+COPY src src
+
+RUN ./mvnw install -DskipTests -P postgresql
+RUN mkdir -p target/dependency && (cd target/dependency; jar -xf ../*.jar)
+
+FROM base AS final
+WORKDIR /app
+ENV SSH_PORT 2222
+ARG DEPENDENCY=/workspace/app/target/dependency
+RUN apk add openssh \
+    && echo "root:Docker!" | chpasswd
+RUN wget -q -O /etc/ssh/sshd_config https://raw.githubusercontent.com/Azure-App-Service/node/master/10.14/sshd_config
+COPY init.sh .
+RUN chmod u+x ./init.sh
+
+COPY --from=build ${DEPENDENCY}/BOOT-INF/lib ./lib
+COPY --from=build ${DEPENDENCY}/META-INF ./META-INF
+COPY --from=build ${DEPENDENCY}/BOOT-INF/classes .
+ENTRYPOINT ["./init.sh"]

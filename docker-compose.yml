@@ -1,0 +1,14 @@
+version: "3.4"
+
+services:
+  springboot-app:
+    build:
+      context: .
+      dockerfile: Dockerfile.AppService
+    image: springboot-samples/appservice
+    ports:
+      - 8080:8080
+    environment:
+      - PGSQL_JDBC_URL=${PGSQL_JDBC_URL}
+      - PGSQL_USERNAME=${PGSQL_USERNAME}
+      - PGSQL_PASSWORD=${PGSQL_PASSWORD}
