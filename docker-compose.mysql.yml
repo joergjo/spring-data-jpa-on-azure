@@ -1,0 +1,9 @@
+version: "3.4"
+
+services:
+  springboot-app:
+    build:
+      args:
+        - profile=mysql
+    command: [ "--spring.profiles.active=mysql" ]
+
