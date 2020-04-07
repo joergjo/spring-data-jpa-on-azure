@@ -15,7 +15,8 @@ RUN ./mvnw -B package -DskipTests -P $profile
 
 FROM base AS final
 WORKDIR /app
-RUN wget -q -O applicationinsights-agent-3.0.0-PREVIEW.jar https://github.com/microsoft/ApplicationInsights-Java/releases/download/3.0.0-PREVIEW/applicationinsights-agent-3.0.0-PREVIEW.jar
+ARG appInsightsAgentURL="https://github.com/microsoft/ApplicationInsights-Java/releases/download/3.0.0-PREVIEW.2/applicationinsights-agent-3.0.0-PREVIEW.2.jar"
+RUN wget -q -O applicationinsights-agent-3.0.0.jar $appInsightsAgentURL
 COPY ApplicationInsights.json .
 COPY --from=build /build/target/spring-data-jpa-on-azure-*.jar spring-data-jpa-on-azure.jar
-ENTRYPOINT ["java", "-javaagent:./applicationinsights-agent-3.0.0-PREVIEW.jar", "-jar", "spring-data-jpa-on-azure.jar"]
+ENTRYPOINT ["java", "-javaagent:./applicationinsights-agent-3.0.0.jar", "-jar", "spring-data-jpa-on-azure.jar"]
