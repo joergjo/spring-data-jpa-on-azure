@@ -26,3 +26,4 @@
 
 ### Docker ###
 .env
+*.env

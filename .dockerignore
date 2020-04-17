@@ -1,5 +1,6 @@
 target/
 .env
+*.env
 .editorconfig
 .gitignore
 *.[mMdD]
