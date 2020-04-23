@@ -1,0 +1,71 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: springboot-data-jpa-secrets
+type: Opaque
+stringData:
+  DB_JDBC_URL: "<insert-jdbc-url>"
+  DB_USERNAME: "<insert-db-user>"
+  DB_PASSWORD: "<insert-db-password>"
+  APPLICATIONINSIGHTS_CONNECTION_STRING: "<insert-appinsights-connectionstring>"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: springboot-data-jpa
+spec:
+  selector:
+    matchLabels:
+      app: springboot-data-jpa
+  replicas: 1
+  strategy:
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 1
+  minReadySeconds: 5
+  template:
+    metadata:
+      annotations:
+        prometheus.io/scrape: "false"
+        prometheus.io/port: "4004"
+        prometheus.io/scheme: http
+        prometheus.io/path: "/actuator/prometheus"
+      labels:
+        app: springboot-data-jpa
+    spec:
+      containers:
+      - name: springboot-data-jpa
+        image: joergjoeu.azurecr.io/springboot-samples/data-jpa:mysql
+        args: [ "--spring.profiles.active=mysql" ]
+        ports:
+        - containerPort: 8080
+          name: http
+        envFrom:
+        - secretRef:
+            name: springboot-data-jpa-secrets
+        resources:
+          requests:
+            cpu: 500m
+            memory: 512Mi
+          limits:
+            cpu: 500m
+            memory: 512Mi
+      nodeSelector:
+        "beta.kubernetes.io/os": linux
+      tolerations:
+        - key: "kubernetes.azure.com/scalesetpriority"
+          operator: "Equal"
+          value: "spot"
+          effect: "NoSchedule"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: springboot-data-jpa
+spec:
+  type: LoadBalancer
+  ports:
+  - port: 80
+    targetPort: http
+  selector:
+    app: springboot-data-jpa
