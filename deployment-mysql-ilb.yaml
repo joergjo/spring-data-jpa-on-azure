@@ -4,10 +4,10 @@ metadata:
   name: springboot-data-jpa-secrets
 type: Opaque
 stringData:
-  DB_JDBC_URL: "<insert-jdbc-url>"
-  DB_USERNAME: "<insert-db-user>"
-  DB_PASSWORD: "<insert-db-password>"
-  APPLICATIONINSIGHTS_CONNECTION_STRING: "<insert-appinsights-connectionstring>"
+  DB_JDBC_URL: "<DB_JDBC_URL>"
+  DB_USERNAME: "<DB_USERNAME>"
+  DB_PASSWORD: "<DB_PASSWORD>"
+  APPLICATIONINSIGHTS_CONNECTION_STRING: "<APP_INSIGHTS_CONNSTRING>"
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -28,7 +28,7 @@ spec:
       annotations:
         prometheus.io/scrape: "false"
         prometheus.io/port: "4004"
-        prometheus.io/scheme: http
+        prometheus.io/scheme: "http"
         prometheus.io/path: "/actuator/prometheus"
       labels:
         app: springboot-data-jpa
@@ -62,6 +62,8 @@ apiVersion: v1
 kind: Service
 metadata:
   name: springboot-data-jpa
+  annotations:
+    service.beta.kubernetes.io/azure-load-balancer-internal: "true"
 spec:
   type: LoadBalancer
   ports:
