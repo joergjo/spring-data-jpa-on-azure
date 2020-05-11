@@ -1,29 +1,28 @@
-FROM mcr.microsoft.com/java/jdk:11-zulu-alpine AS base
-VOLUME /tmp
+FROM mcr.microsoft.com/java/jre-headless:11-zulu-alpine AS base
 EXPOSE 8080 2222
 
 FROM mcr.microsoft.com/java/jdk:11-zulu-alpine AS build
-WORKDIR /workspace/app
+ARG profile="postgresql"
+WORKDIR /build
 
 COPY mvnw .
 COPY .mvn .mvn
 COPY pom.xml .
-COPY src src
+RUN ./mvnw -B dependency:go-offline -P $profile
 
-RUN ./mvnw install -DskipTests -P postgresql
-RUN mkdir -p target/dependency && (cd target/dependency; jar -xf ../*.jar)
+COPY src src
+RUN ./mvnw -B package -DskipTests -P $profile
 
 FROM base AS final
 WORKDIR /app
+ARG appInsightsAgentURL="https://github.com/microsoft/ApplicationInsights-Java/releases/download/3.0.0-PREVIEW.4/applicationinsights-agent-3.0.0-PREVIEW.4.jar"
 ENV SSH_PORT 2222
-ARG DEPENDENCY=/workspace/app/target/dependency
+RUN wget -q -O applicationinsights-agent-3.0.0.jar $appInsightsAgentURL
 RUN apk add openssh \
     && echo "root:Docker!" | chpasswd
 RUN wget -q -O /etc/ssh/sshd_config https://raw.githubusercontent.com/Azure-App-Service/node/master/10.14/sshd_config
 COPY init.sh .
 RUN chmod u+x ./init.sh
-
-COPY --from=build ${DEPENDENCY}/BOOT-INF/lib ./lib
-COPY --from=build ${DEPENDENCY}/META-INF ./META-INF
-COPY --from=build ${DEPENDENCY}/BOOT-INF/classes .
+COPY ApplicationInsights.json .
+COPY --from=build /build/target/spring-data-jpa-on-azure-*.jar spring-data-jpa-on-azure.jar
 ENTRYPOINT ["./init.sh"]
